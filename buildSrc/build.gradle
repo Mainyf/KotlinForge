@@ -1,0 +1,13 @@
+repositories {
+    maven {
+        name = "forge"
+        url = "http://files.minecraftforge.net/maven"
+    }
+    mavenCentral()
+    jcenter()
+    mavenLocal()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy:2.4.4'
+}

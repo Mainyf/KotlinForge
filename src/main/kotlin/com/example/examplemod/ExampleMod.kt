@@ -10,7 +10,7 @@ class ExampleMod {
 
     companion object {
         const val MODID = "examplemod"
-        const val VERSION = "1.0"
+        const val VERSION = "@version@"
     }
 
     @EventHandler
