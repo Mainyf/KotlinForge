@@ -52,7 +52,11 @@ task preprocessProperties(type: Copy) {
     println "preprocessProperties"
 }
 
-compileKotlin.dependsOn preprocessProperties
+compileKotlin {
+    dependsOn preprocessProperties
+    source = preprocessProperties.destinationDir
+    destinationDir = file('build/adjustedClasses')
+}
 
 minecraft {
     version = "1.7.10-10.13.4.1558-1.7.10"
@@ -66,6 +70,7 @@ configurations {
 }
 
 dependencies {
+    compile 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
     embed 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:+'
     compile 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.5-2'
 }
@@ -82,8 +87,10 @@ jar {
 
 
 sourceSets {
-    main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
-    main.java.srcDirs = [bundleInfo.javaSrcDirs]
+//    main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
+    main.kotlin.srcDirs = []
+//    main.java.srcDirs = [bundleInfo.javaSrcDirs]
+    main.java.srcDirs = []
 }
 
 processResources {
