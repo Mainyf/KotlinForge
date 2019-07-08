@@ -45,23 +45,11 @@ compileJava {
     sourceCompatibility = targetCompatibility = bundleInfo.javaVersuon
 }
 
-task preprocessProperties(type: Copy) {
-    from bundleInfo.kotlinSrcDirs
-    into 'build/sourceTmp/kotlin'
-    filter(ReplaceTokens, tokens: getVariable())
-    println "preprocessProperties"
-}
-
-compileKotlin {
-    dependsOn preprocessProperties
-    source = preprocessProperties.destinationDir
-    destinationDir = file('build/adjustedClasses')
-}
-
 minecraft {
     version = "1.7.10-10.13.4.1558-1.7.10"
     runDir = "eclipse"
     mappings = "snapshot_20140925"
+
 }
 
 configurations {
@@ -87,10 +75,8 @@ jar {
 
 
 sourceSets {
-//    main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
-    main.kotlin.srcDirs = []
-//    main.java.srcDirs = [bundleInfo.javaSrcDirs]
-    main.java.srcDirs = []
+    main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
+    main.java.srcDirs = [bundleInfo.javaSrcDirs]
 }
 
 processResources {
