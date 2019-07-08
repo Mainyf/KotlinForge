@@ -45,6 +45,17 @@ compileJava {
     sourceCompatibility = targetCompatibility = bundleInfo.javaVersuon
 }
 
+task prepareSources(type: Copy) {
+    from(bundleInfo.kotlinSrcDirs)
+    into('build/src/main/kotlin')
+    filter(ReplaceTokens, tokens: getSourceCodeVariable())
+}
+
+compileKotlin {
+    dependsOn prepareSources
+    source = prepareSources.destinationDir
+}
+
 minecraft {
     version = "1.7.10-10.13.4.1558-1.7.10"
     runDir = "eclipse"
@@ -73,7 +84,6 @@ jar {
     from configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
 }
 
-
 sourceSets {
     main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
     main.java.srcDirs = [bundleInfo.javaSrcDirs]
@@ -91,6 +101,15 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
     }
+}
+
+Map<String, Object> getSourceCodeVariable() {
+    def variable = getVariable()
+    def result = new HashMap<String, Object>()
+    for (Map.Entry<String, Object> entry : variable) {
+        result.put(entry.key.toUpperCase(), entry.value)
+    }
+    return result
 }
 
 Map<String, Object> getVariable() {

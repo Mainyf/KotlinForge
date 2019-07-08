@@ -9,8 +9,8 @@ import cpw.mods.fml.common.event.FMLInitializationEvent
 class ExampleMod {
 
     companion object {
-        const val MODID = "examplemod"
-        const val VERSION = "@version@"
+        const val MODID = "@MODID@"
+        const val VERSION = "@VERSION@"
     }
 
     @EventHandler

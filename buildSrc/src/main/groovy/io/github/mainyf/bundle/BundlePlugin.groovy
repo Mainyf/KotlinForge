@@ -2,9 +2,6 @@ package io.github.mainyf.bundle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.compile.JavaCompile
-import org.apache.tools.ant.filters.ReplaceTokens
 
 class BundlePlugin implements Plugin<Project> {
 
