@@ -16,8 +16,12 @@ class BundlePluginExtension {
     String javaSrcDirs = "src/main/java"
     boolean hasIncludeKtRuntime = true
 
-    String getAuthor() {
+    String getAuthors() {
         return "\"${author.join("\",\"")}\""
+    }
+
+    String getAuthor() {
+        return author.first()
     }
 
     String getModId() {
@@ -26,6 +30,18 @@ class BundlePluginExtension {
 
     String getAtFileName() {
         return "${getModId()}_at.cfg"
+    }
+
+    String getMainClass() {
+        return modName.replace(" ", "")
+    }
+
+    String getFullPackage() {
+        return "${this.group}.${this.getModId()}"
+    }
+
+    String getFullFilePath() {
+        return "${this.group.replace(".", "/")}/${this.getModId()}"
     }
 
 }

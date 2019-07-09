@@ -10,4 +10,14 @@ Linux/Mac OS: ./gradlew setupDecompWorkspace
 
 idea: gradlew idea
 eclipse: gradlew eclipse
+
+```
+
+import project to your ide.
+
+```
+
+(gradlew | ./gradlew) initCode # generate base code
+(gradlew | ./gradlew) createATFile # generate acccess transform file
+
 ```

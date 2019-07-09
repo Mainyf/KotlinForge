@@ -27,6 +27,11 @@ class BundlePlugin implements Plugin<Project> {
             description = "create access transform file"
         }
 
+        project.task("initCode", type: InitCodeTask) {
+            group = "bundle"
+            description = "init code"
+        }
+
         project.afterEvaluate { afterEvaluate(project) }
 
     }
@@ -79,12 +84,12 @@ class BundlePlugin implements Plugin<Project> {
 //            inputs.property "mcversion", project.minecraft.version
 
             from(sourceSets.main.resources.srcDirs) {
-                include 'mcmod.info'
+                include 'mcmodTmp.info'
                 expand getVariable(project)
             }
 
             from(sourceSets.main.resources.srcDirs) {
-                exclude 'mcmod.info'
+                exclude 'mcmodTmp.info'
             }
         }
     }
@@ -124,6 +129,7 @@ class BundlePlugin implements Plugin<Project> {
                 'version'    : bundleInfo.version,
                 'mcversion'  : minecraftInfo.version,
                 'author'     : bundleInfo.getAuthor(),
+                'authors'     : bundleInfo.getAuthors(),
                 'description': bundleInfo.description,
                 'modid'      : bundleInfo.getModId(),
                 'name'       : bundleInfo.modName
