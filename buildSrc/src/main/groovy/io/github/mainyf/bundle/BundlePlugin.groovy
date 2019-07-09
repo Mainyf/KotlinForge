@@ -1,13 +1,18 @@
 package io.github.mainyf.bundle
 
+import net.minecraftforge.gradle.common.BaseExtension
 import net.minecraftforge.gradle.delayed.DelayedFile
 import net.minecraftforge.gradle.tasks.user.SourceCopyTask
 import net.minecraftforge.gradle.user.UserConstants
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.internal.plugins.DslObject
+import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -21,16 +26,70 @@ class BundlePlugin implements Plugin<Project> {
             group = "bundle"
             description = "create access transform file"
         }
+
         project.afterEvaluate { afterEvaluate(project) }
 
     }
 
     private static void afterEvaluate(Project project) {
-        makeKotlinSourceTask(project)
+        def javaConv = (JavaPluginConvention) project.getConvention().getPlugins().get("java")
+        def sourceSets = javaConv.getSourceSets()
+        def baseConv = (BasePluginConvention) project.getConvention().getPlugins().get("base")
+        def bundleInfo = project.extensions.getByName("bundle") as BundlePluginExtension
+
+        project.group = bundleInfo.group
+        project.version = bundleInfo.version
+        baseConv.archivesBaseName = bundleInfo.getModId()
+        sourceSets.main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
+        sourceSets.main.java.srcDirs = [bundleInfo.javaSrcDirs]
+
+        project.configurations.create("embed")
+        project.dependencies.add(bundleInfo.hasIncludeKtRuntime ? "embed" : "compile", "org.jetbrains.kotlin:kotlin-stdlib-jdk8:+")
+        def embed = project.configurations.getByName("embed")
+        project.configurations.getByName("compile").extendsFrom(embed)
+
+        project.tasks.withType(Jar) {
+            if (project.file(bundleInfo.getAtFileName()).exists()) {
+                println("access transform exists, include to manifest file.")
+                manifest {
+                    attributes 'FMLAT': bundleInfo.getAtFileName()
+                }
+            }
+            from project.configurations.getByName("embed").collect { it.isDirectory() ? it : project.zipTree(it) }
+        }
+
+        makeJavaCompile(project, javaConv, bundleInfo)
+        makeProcessResources(project, javaConv)
+        makeKotlinSourceTask(project, javaConv)
     }
 
-    private static void makeKotlinSourceTask(Project project) {
-        JavaPluginConvention javaConv = (JavaPluginConvention) project.getConvention().getPlugins().get("java")
+    private static void makeJavaCompile(Project project, JavaPluginConvention javaConv, BundlePluginExtension bundleInfo) {
+        javaConv.sourceCompatibility = javaConv.targetCompatibility = bundleInfo.javaVersuon
+        project.tasks.withType(JavaCompile) {
+            sourceCompatibility = targetCompatibility = bundleInfo.javaVersuon
+            options.encoding = bundleInfo.encoding
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
+    }
+
+    private static void makeProcessResources(Project project, JavaPluginConvention javaConv) {
+        project.tasks.withType(ProcessResources) {
+            def sourceSets = javaConv.getSourceSets()
+//            inputs.property "version", bundleInfo.version
+//            inputs.property "mcversion", project.minecraft.version
+
+            from(sourceSets.main.resources.srcDirs) {
+                include 'mcmod.info'
+                expand getVariable(project)
+            }
+
+            from(sourceSets.main.resources.srcDirs) {
+                exclude 'mcmod.info'
+            }
+        }
+    }
+
+    private static void makeKotlinSourceTask(Project project, JavaPluginConvention javaConv) {
         SourceSet main = javaConv.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME)
         if (project.getPlugins().hasPlugin("kotlin")) {
             KotlinSourceSet set = (KotlinSourceSet) new DslObject(main).getConvention().getPlugins().get("kotlin")
@@ -60,9 +119,10 @@ class BundlePlugin implements Plugin<Project> {
 
     static Map<String, Object> getVariable(Project project) {
         def bundleInfo = project.extensions.getByName("bundle") as BundlePluginExtension
+        def minecraftInfo = project.extensions.getByName("minecraft") as BaseExtension
         return [
                 'version'    : bundleInfo.version,
-                'mcversion'  : project.minecraft.version,
+                'mcversion'  : minecraftInfo.version,
                 'author'     : bundleInfo.getAuthor(),
                 'description': bundleInfo.description,
                 'modid'      : bundleInfo.getModId(),

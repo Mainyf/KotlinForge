@@ -14,6 +14,7 @@ class BundlePluginExtension {
     String encoding = Charsets.UTF_8.toString()
     String kotlinSrcDirs = "src/main/kotlin"
     String javaSrcDirs = "src/main/java"
+    boolean hasIncludeKtRuntime = true
 
     String getAuthor() {
         return "\"${author.join("\",\"")}\""
