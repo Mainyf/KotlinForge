@@ -65,8 +65,8 @@ class InitCodeTask extends DefaultTask {
                     "    }\n" +
                     "\n" +
                     "    @EventHandler\n" +
-                    "    fun init(event: FMLPostInitializationEvent) {\n" +
-                    "        proxy?.init(event)\n" +
+                    "    fun postInit(event: FMLPostInitializationEvent) {\n" +
+                    "        proxy?.postInit(event)\n" +
                     "    }\n" +
                     "\n" +
                     "    @EventHandler\n" +
@@ -118,7 +118,7 @@ class InitCodeTask extends DefaultTask {
                     "\n" +
                     "    }\n" +
                     "\n" +
-                    "    fun init(event: FMLPostInitializationEvent) {\n" +
+                    "    fun postInit(event: FMLPostInitializationEvent) {\n" +
                     "\n" +
                     "    }\n" +
                     "\n" +
