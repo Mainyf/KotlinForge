@@ -39,12 +39,8 @@ class BundlePlugin implements Plugin<Project> {
     private static void afterEvaluate(Project project) {
         def javaConv = (JavaPluginConvention) project.getConvention().getPlugins().get("java")
         def sourceSets = javaConv.getSourceSets()
-        def baseConv = (BasePluginConvention) project.getConvention().getPlugins().get("base")
         def bundleInfo = project.extensions.getByName("bundle") as BundlePluginExtension
 
-        project.group = bundleInfo.group
-        project.version = bundleInfo.version
-        baseConv.archivesBaseName = bundleInfo.getModId()
         sourceSets.main.kotlin.srcDirs = [bundleInfo.kotlinSrcDirs]
         sourceSets.main.java.srcDirs = [bundleInfo.javaSrcDirs]
 
