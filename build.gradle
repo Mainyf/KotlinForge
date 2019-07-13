@@ -57,7 +57,8 @@ compileKotlin {
 
 def resourceDir = "src/main/resources"
 def modId = project.modName.replace(" ", "").toLowerCase()
-def atFilePath = "${resourceDir}/${modId}_at.cfg"
+def atFile = "${modId}_at.cfg"
+def atFilePath = "${resourceDir}/META-INF/${atFile}"
 
 version = project.modVersion
 group = project.groupId
@@ -91,9 +92,7 @@ dependencies {
 jar {
     if (project.file(atFilePath).exists()) {
         println("access transform exists, include to manifest file.")
-        manifest {
-            attributes 'FMLAT': atFilePath
-        }
+        manifest.attributes('FMLAT': atFile)
     }
     from configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
 }
@@ -143,18 +142,17 @@ task createATFIle {
     if (isBlank(modName)) {
         throw new IllegalArgumentException("modName cannot empty")
     }
-    def atFileName = "${modId}_at.cfg"
     def metaInfoDir = project.file("src/main/resources/META-INF").toPath()
     if (Files.notExists(metaInfoDir)) {
         Files.createDirectories(metaInfoDir)
     }
-    def atFile = metaInfoDir.resolve(atFileName)
-    if (Files.notExists(atFile)) {
-        Files.createFile(atFile)
-        atFile.write("# public net.minecraft.client.Minecraft *")
-        println("${atFileName} create successful.")
+    def atPath = metaInfoDir.resolve(atFile)
+    if (Files.notExists(atPath)) {
+        Files.createFile(atPath)
+        atPath.write("# public net.minecraft.client.Minecraft *")
+        println("${atFile} create successful.")
     } else {
-        println("${atFileName} already exists.")
+        println("${atFile} already exists.")
     }
 }
 
