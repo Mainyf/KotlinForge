@@ -1,6 +1,8 @@
 import net.minecraftforge.gradle.delayed.DelayedFile
 import net.minecraftforge.gradle.tasks.user.SourceCopyTask
 
+import java.nio.file.Files
+
 buildscript {
     repositories {
         mavenCentral()
@@ -23,7 +25,7 @@ apply plugin: 'forge'
 apply plugin: 'kotlin'
 
 project.ext {
-    group = "io.github.mainyf"
+    groupId = "io.github.mainyf"
     modName = "Mod Name"
     modVersion = "1.0"
     author = "Mainyf"
@@ -38,6 +40,7 @@ task sourceMainKotlin(type: SourceCopyTask) {
     source = sourceSets.main.kotlin
     output = new DelayedFile(project.file("build/src/kotlin"))
     replace(getSourceCodeVariable())
+    include("References.kt")
 }
 
 compileKotlin {
@@ -45,7 +48,7 @@ compileKotlin {
     setSource(project.file("build/src/kotlin"))
     def path = project.file("build/src/kotlin").toPath()
     include {
-        if(it instanceof FileTreeElement) {
+        if (it instanceof FileTreeElement) {
             return ((FileTreeElement) it).getFile().toPath().startsWith(path)
         }
         return it
@@ -57,7 +60,7 @@ def modId = project.modName.replace(" ", "").toLowerCase()
 def atFilePath = "${resourceDir}/${modId}_at.cfg"
 
 version = project.modVersion
-group = project.group
+group = project.groupId
 archivesBaseName = modId
 
 tasks.withType(Jar) {
@@ -126,10 +129,215 @@ Map<String, Object> getSourceCodeVariable() {
 Map<String, Object> getVariable() {
     return [
             'version'    : project.modVersion,
-            'mcversion'  : project.minecraft.version,
+            'mcversion'  : "1.7.10",
             'author'     : project.author,
             'description': project.description,
-            'modid'      : project.modName.replace(" ", "").toLowerCase(),
+            'modid'      : project.archivesBaseName,
             'name'       : project.modName
     ]
+}
+
+task createATFIle {
+    group = "bundle"
+    def modName = project.modName
+    if (isBlank(modName)) {
+        throw new IllegalArgumentException("modName cannot empty")
+    }
+    def atFileName = "${modId}_at.cfg"
+    def metaInfoDir = project.file("src/main/resources/META-INF").toPath()
+    if (Files.notExists(metaInfoDir)) {
+        Files.createDirectories(metaInfoDir)
+    }
+    def atFile = metaInfoDir.resolve(atFileName)
+    if (Files.notExists(atFile)) {
+        Files.createFile(atFile)
+        atFile.write("# public net.minecraft.client.Minecraft *")
+        println("${atFileName} create successful.")
+    } else {
+        println("${atFileName} already exists.")
+    }
+}
+
+task initCode {
+    group = "bundle"
+    def folder = project.file("${project.kotlinSrcDirs}/${project.group.replace(".", "/")}/${project.archivesBaseName}").toPath()
+    if (Files.notExists(folder)) {
+        Files.createDirectories(folder)
+    }
+    makeResource()
+    makeMainClassFile(folder)
+    makeReferencesClassFile(folder)
+    makeCommonProxyClassFile(folder)
+    makeClientProxyClassFile(folder)
+}
+
+def makeMainClassFile(java.nio.file.Path folder) {
+    def mainClassName = getMainClass()
+    def mainClass = folder.resolve("${mainClassName}.kt")
+    if(Files.notExists(mainClass)) {
+        Files.createFile(mainClass)
+        mainClass.write("package ${getFullPackage()}\n" +
+                "\n" +
+                "import ${getFullPackage()}.common.CommonProxy\n" +
+                "import cpw.mods.fml.common.Mod\n" +
+                "import cpw.mods.fml.common.Mod.EventHandler\n" +
+                "import cpw.mods.fml.common.SidedProxy\n" +
+                "import cpw.mods.fml.common.event.FMLInitializationEvent\n" +
+                "import cpw.mods.fml.common.event.FMLPostInitializationEvent\n" +
+                "import cpw.mods.fml.common.event.FMLPreInitializationEvent\n" +
+                "import cpw.mods.fml.common.event.FMLServerStartingEvent\n" +
+                "\n" +
+                "@Mod(modid = References.MODID, version = References.VERSION)\n" +
+                "class ${mainClassName} {\n" +
+                "\n" +
+                "    companion object {\n" +
+                "\n" +
+                "        @Mod.Instance\n" +
+                "        var INSTANCE: ${mainClassName}? = null\n" +
+                "\n" +
+                "        @SidedProxy(clientSide = \"${getFullPackage()}.client.ClientProxy\", serverSide = \"${getFullPackage()}.common.CommonProxy\")\n" +
+                "        var proxy: CommonProxy? = null\n" +
+                "    }\n" +
+                "\n" +
+                "    @EventHandler\n" +
+                "    fun preInit(event: FMLPreInitializationEvent) {\n" +
+                "        proxy?.preInit(event)\n" +
+                "    }\n" +
+                "\n" +
+                "    @EventHandler\n" +
+                "    fun init(event: FMLInitializationEvent) {\n" +
+                "        proxy?.init(event)\n" +
+                "    }\n" +
+                "\n" +
+                "    @EventHandler\n" +
+                "    fun postInit(event: FMLPostInitializationEvent) {\n" +
+                "        proxy?.postInit(event)\n" +
+                "    }\n" +
+                "\n" +
+                "    @EventHandler\n" +
+                "    fun onServerStart(event: FMLServerStartingEvent) {\n" +
+                "        proxy?.onServerStart(event)\n" +
+                "    }\n" +
+                "\n" +
+                "}")
+    }
+}
+
+def makeReferencesClassFile(java.nio.file.Path folder) {
+    def referencesClass = folder.resolve("References.kt")
+    if(Files.notExists(referencesClass)) {
+        Files.createFile(referencesClass)
+        referencesClass.write("package ${getFullPackage()}\n" +
+                "\n" +
+                "object References {\n" +
+                "\n" +
+                "    const val MOD_NAME = \"@NAME@\"\n" +
+                "    const val MODID = \"@MODID@\"\n" +
+                "    const val VERSION = \"@VERSION@\"\n" +
+                "    const val MC_VERSION = \"@MCVERSION@\"\n" +
+                "    const val author = \"@AUTHOR@\"\n" +
+                "\n" +
+                "}")
+    }
+}
+
+def makeCommonProxyClassFile(java.nio.file.Path folder) {
+    def commonClassName = "CommonProxy"
+    def commonClass = folder.resolve("common${File.separator}${commonClassName}.kt")
+    if(Files.notExists(commonClass.parent)) {
+        Files.createDirectories(commonClass.parent)
+    }
+    if(Files.notExists(commonClass)) {
+        Files.createFile(commonClass)
+        commonClass.write("package ${getFullPackage()}.common\n" +
+                "\n" +
+                "import cpw.mods.fml.common.event.*\n" +
+                "\n" +
+                "open class CommonProxy {\n" +
+                "\n" +
+                "    fun preInit(event: FMLPreInitializationEvent) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    fun init(event: FMLInitializationEvent) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    fun postInit(event: FMLPostInitializationEvent) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    fun onServerStart(event: FMLServerStartingEvent) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "}")
+    }
+}
+
+def makeClientProxyClassFile(java.nio.file.Path folder) {
+    def clientClassName = "ClientProxy"
+    def clientClass = folder.resolve("client${File.separator}${clientClassName}.kt")
+    if(Files.notExists(clientClass.parent)) {
+        Files.createDirectories(clientClass.parent)
+    }
+    if(Files.notExists(clientClass)) {
+        Files.createFile(clientClass)
+        clientClass.write("package ${getFullPackage()}.client\n" +
+                "\n" +
+                "import ${getFullPackage()}.common.CommonProxy\n" +
+                "\n" +
+                "class ClientProxy : CommonProxy() {\n" +
+                "\n" +
+                "}")
+    }
+
+}
+
+def makeResource() {
+    def resource = project.file("src/main/resources").toPath()
+    if(Files.notExists(resource)) {
+        Files.createDirectories(resource)
+    }
+    def mcMetadata = resource.resolve("mcmod.info")
+    if(Files.notExists(mcMetadata)) {
+        Files.createFile(mcMetadata)
+        mcMetadata.write("[\n" +
+                "    {\n" +
+                "      \"modid\": \"\${modid}\",\n" +
+                "      \"name\": \"\${name}\",\n" +
+                "      \"description\": \"\${description}\",\n" +
+                "      \"version\": \"\${version}\",\n" +
+                "      \"mcversion\": \"\${mcversion}\",\n" +
+                "      \"url\": \"\",\n" +
+                "      \"updateUrl\": \"\",\n" +
+                "      \"authorList\": [\${author}],\n" +
+                "      \"credits\": \"\",\n" +
+                "      \"logoFile\": \"\",\n" +
+                "      \"screenshots\": [],\n" +
+                "      \"dependencies\": []\n" +
+                "    }\n" +
+                "]")
+    }
+}
+
+def isBlank(String str) {
+    int strLen
+    if (str == null || (strLen = str.length()) == 0) {
+        return true
+    }
+    for (int i = 0; i < strLen; i++) {
+        if (!Character.isWhitespace(str.charAt(i))) {
+            return false
+        }
+    }
+    return true
+}
+
+def getMainClass() {
+    return project.modName.replace(" ", "")
+}
+
+def getFullPackage() {
+    return "${project.groupId}.${project.archivesBaseName}"
 }
