@@ -253,19 +253,19 @@ def makeCommonProxyClassFile(java.nio.file.Path folder) {
                 "\n" +
                 "open class CommonProxy {\n" +
                 "\n" +
-                "    fun preInit(event: FMLPreInitializationEvent) {\n" +
+                "    open fun preInit(event: FMLPreInitializationEvent) {\n" +
                 "\n" +
                 "    }\n" +
                 "\n" +
-                "    fun init(event: FMLInitializationEvent) {\n" +
+                "    open fun init(event: FMLInitializationEvent) {\n" +
                 "\n" +
                 "    }\n" +
                 "\n" +
-                "    fun postInit(event: FMLPostInitializationEvent) {\n" +
+                "    open fun postInit(event: FMLPostInitializationEvent) {\n" +
                 "\n" +
                 "    }\n" +
                 "\n" +
-                "    fun onServerStart(event: FMLServerStartingEvent) {\n" +
+                "    open fun onServerStart(event: FMLServerStartingEvent) {\n" +
                 "\n" +
                 "    }\n" +
                 "\n" +
